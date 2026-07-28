@@ -1,0 +1,30 @@
+"use client";
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { translations, type Language } from "./translations";
+
+interface LanguageStore {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (typeof translations)[Language];
+}
+
+export const useLanguage = create<LanguageStore>()(
+  persist(
+    (set, get) => ({
+      language: "pt",
+      setLanguage: (lang: Language) =>
+        set({ language: lang, t: translations[lang] }),
+      t: translations.pt,
+    }),
+    {
+      name: "ventuno-language",
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.t = translations[state.language];
+        }
+      },
+    },
+  ),
+);
