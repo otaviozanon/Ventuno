@@ -21,7 +21,7 @@
 
 ## 🎮 Como Jogar
 
-**Objetivo:** Seja o primeiro a acumular **10.000 chips**!
+**Objetivo:** Seja o primeiro a acumular **5.000 chips**!
 
 ### Regras
 
