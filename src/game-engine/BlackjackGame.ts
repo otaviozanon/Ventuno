@@ -125,6 +125,19 @@ export class BlackjackGame {
     }
     this.state.phase = "playing";
     this.state.currentPlayerIndex = 0;
+    this.skipBlackjackPlayers();
+  }
+
+  private skipBlackjackPlayers(): void {
+    while (
+      this.state.currentPlayerIndex < this.state.players.length &&
+      this.state.players[this.state.currentPlayerIndex].status === "blackjack"
+    ) {
+      this.state.currentPlayerIndex++;
+    }
+    if (this.state.currentPlayerIndex >= this.state.players.length) {
+      this.state.phase = "dealer";
+    }
   }
 
   playerAction(
@@ -171,10 +184,13 @@ export class BlackjackGame {
 
   private nextPlayer(): void {
     this.state.currentPlayerIndex++;
-    while (
-      this.state.currentPlayerIndex < this.state.players.length &&
-      this.state.players[this.state.currentPlayerIndex].status !== "playing"
-    ) {
+    while (this.state.currentPlayerIndex < this.state.players.length) {
+      const status = this.state.players[this.state.currentPlayerIndex].status;
+      if (status === "playing") break;
+      if (status === "blackjack") {
+        this.state.currentPlayerIndex++;
+        continue;
+      }
       this.state.currentPlayerIndex++;
     }
     if (this.state.currentPlayerIndex >= this.state.players.length) {
