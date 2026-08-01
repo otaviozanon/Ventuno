@@ -17,19 +17,19 @@ export class BlackjackGame {
       players: [],
       dealer: { hand: [] },
       currentPlayerIndex: 0,
-      deck: [],
+      winnerDeclared: false,
     };
   }
 
   getState(): GameState {
-    return JSON.parse(JSON.stringify(this.state));
+    const { deck, ...rest } = this.state as any;
+    return JSON.parse(JSON.stringify(rest));
   }
 
   addPlayer(id: string, name: string): void {
     if (this.state.players.length >= 7) {
       throw new Error("Maximum 7 players allowed");
     }
-
     const newPlayer: Player = {
       id,
       name,
@@ -38,9 +38,9 @@ export class BlackjackGame {
       bet: 0,
       active: true,
       status: "waiting",
+      betConfirmed: false,
       rebuysUsed: 0,
     };
-
     this.state.players.push(newPlayer);
   }
 
@@ -48,132 +48,81 @@ export class BlackjackGame {
     if (this.state.players.length < 2) {
       throw new Error("At least 2 players required");
     }
-
     this.state.phase = "betting";
-    this.state.deck = shuffle(createDeck());
+    (this.state as any).deck = shuffle(createDeck());
     this.state.currentPlayerIndex = 0;
-
+    this.state.winnerDeclared = false;
     for (const player of this.state.players) {
       player.hands = [];
       player.bet = 0;
       player.status = "betting";
+      player.betConfirmed = false;
     }
   }
 
   placeBet(playerId: string, amount: number): void {
+    if (this.state.phase !== "betting") throw new Error("Not in betting phase");
     const player = this.state.players.find((p) => p.id === playerId);
     if (!player) throw new Error("Player not found");
-
     if (amount < 10) throw new Error("Minimum bet is 10 chips");
     if (amount > player.chips) throw new Error("Insufficient chips");
-
+    if (!Number.isInteger(amount)) throw new Error("Bet must be an integer");
     player.bet = amount;
   }
 
   confirmPlayerBet(playerId: string): boolean {
     const player = this.state.players.find((p) => p.id === playerId);
-    if (!player || player.bet < 10) {
-      return false;
-    }
-
-    (player as any).betConfirmed = true;
-
-    // Verifica se todos confirmaram
+    if (!player || player.bet < 10) return false;
+    player.betConfirmed = true;
     const allConfirmed = this.state.players.every(
-      (p) => (p as any).betConfirmed || p.status === "folded",
+      (p) => p.betConfirmed || p.status === "folded",
     );
-
     return allConfirmed;
   }
 
-  confirmBetting(): void {
-    if (this.state.phase !== "betting") {
-      console.warn(
-        "[BlackjackGame] confirmBetting called but phase is not betting:",
-        this.state.phase,
-      );
-      return; // Previne chamada duplicada
-    }
-
-    console.log(
-      `[BlackjackGame] confirmBetting START - dealer.hand.length: ${this.state.dealer.hand.length}`,
-    );
-
+  startDealing(): void {
+    if (this.state.phase !== "betting") return;
     for (const player of this.state.players) {
-      const chipsBefore = player.chips;
       if (player.bet === 0) {
-        player.chips -= 50;
+        player.chips = Math.max(0, player.chips - 50);
         player.status = "folded";
       } else {
         player.chips -= player.bet;
         player.status = "playing";
       }
-      console.log(
-        `[BlackjackGame] ${player.name}: chips ${chipsBefore} → ${player.chips} (bet: ${player.bet})`,
-      );
     }
-
-    // Limpa dealer e players antes de nova rodada
     this.state.dealer.hand = [];
     for (const player of this.state.players) {
       player.hands = [];
     }
-
-    console.log(
-      `[BlackjackGame] confirmBetting END - dealer.hand.length: ${this.state.dealer.hand.length}`,
-    );
-
     this.state.phase = "dealing";
+    this.dealCards();
   }
 
-  dealInitialCards(): void {
-    if (this.state.phase !== "dealing") {
-      console.warn(
-        "[BlackjackGame] dealInitialCards called but phase is not dealing:",
-        this.state.phase,
-      );
-      return; // Previne chamada duplicada
-    }
-
-    console.log(
-      `[BlackjackGame] dealInitialCards START - dealer.hand.length: ${this.state.dealer.hand.length}`,
-    );
-
+  private dealCards(): void {
+    const deck = (this.state as any).deck as Card[];
+    if (!deck) throw new Error("Deck not initialized");
     for (const player of this.state.players) {
       if (player.status === "playing") {
         const hand: Card[] = [];
         for (let i = 0; i < 2; i++) {
-          const { card, remainingDeck } = dealCard(this.state.deck);
+          if (deck.length === 0) break;
+          const { card, remainingDeck } = dealCard(deck);
           hand.push(card);
-          this.state.deck = remainingDeck;
+          deck.splice(0, deck.length, ...remainingDeck);
         }
         player.hands = [hand];
-
-        // Detecta BLACKJACK imediatamente
         if (isBlackjack(hand)) {
           player.status = "blackjack";
-          console.log(`[BlackjackGame] ${player.name} got BLACKJACK!`);
         }
       }
     }
-
-    console.log(
-      `[BlackjackGame] Players dealt - dealer.hand.length: ${this.state.dealer.hand.length}`,
-    );
-
     for (let i = 0; i < 2; i++) {
-      const { card, remainingDeck } = dealCard(this.state.deck);
+      if (deck.length === 0) break;
+      const { card, remainingDeck } = dealCard(deck);
       this.state.dealer.hand.push(card);
-      this.state.deck = remainingDeck;
-      console.log(
-        `[BlackjackGame] Dealer card ${i + 1} dealt - total: ${this.state.dealer.hand.length}`,
-      );
+      deck.splice(0, deck.length, ...remainingDeck);
     }
-
-    console.log(
-      `[BlackjackGame] dealInitialCards END - dealer.hand: ${this.state.dealer.hand.length} cards`,
-    );
-
     this.state.phase = "playing";
     this.state.currentPlayerIndex = 0;
   }
@@ -182,16 +131,24 @@ export class BlackjackGame {
     playerId: string,
     action: "hit" | "stand" | "double" | "split",
   ): void {
-    const player = this.state.players.find((p) => p.id === playerId);
-    if (!player) throw new Error("Player not found");
+    const playerIdx = this.state.players.findIndex((p) => p.id === playerId);
+    if (playerIdx === -1) throw new Error("Player not found");
+    if (this.state.currentPlayerIndex !== playerIdx) throw new Error("Not your turn");
+    if (this.state.phase !== "playing") throw new Error("Not in playing phase");
 
+    const player = this.state.players[playerIdx];
+    if (player.status !== "playing" && player.status !== "blackjack") {
+      throw new Error("Player cannot act now");
+    }
+
+    const deck = (this.state as any).deck as Card[];
     const hand = player.hands[0];
 
     if (action === "hit") {
-      const { card, remainingDeck } = dealCard(this.state.deck);
+      if (deck.length === 0) throw new Error("Deck is empty");
+      const { card, remainingDeck } = dealCard(deck);
       hand.push(card);
-      this.state.deck = remainingDeck;
-
+      deck.splice(0, deck.length, ...remainingDeck);
       if (isBust(hand)) {
         player.status = "bust";
         this.nextPlayer();
@@ -200,108 +157,76 @@ export class BlackjackGame {
       this.nextPlayer();
     } else if (action === "double") {
       if (!canDouble(hand)) throw new Error("Cannot double");
-      if (player.bet > player.chips)
-        throw new Error("Insufficient chips for double");
-
+      if (player.bet > player.chips) throw new Error("Insufficient chips for double");
       player.chips -= player.bet;
       player.bet *= 2;
-
-      const { card, remainingDeck } = dealCard(this.state.deck);
+      if (deck.length === 0) throw new Error("Deck is empty");
+      const { card, remainingDeck } = dealCard(deck);
       hand.push(card);
-      this.state.deck = remainingDeck;
-
-      if (isBust(hand)) {
-        player.status = "bust";
-      }
-
+      deck.splice(0, deck.length, ...remainingDeck);
+      if (isBust(hand)) player.status = "bust";
       this.nextPlayer();
     }
   }
 
   private nextPlayer(): void {
     this.state.currentPlayerIndex++;
-
     while (
       this.state.currentPlayerIndex < this.state.players.length &&
       this.state.players[this.state.currentPlayerIndex].status !== "playing"
     ) {
       this.state.currentPlayerIndex++;
     }
-
-    console.log(
-      `[BlackjackGame] nextPlayer: currentPlayerIndex=${this.state.currentPlayerIndex}, total=${this.state.players.length}`,
-    );
-    console.log(
-      `[BlackjackGame] Players status:`,
-      this.state.players.map((p) => `${p.name}:${p.status}`),
-    );
-
     if (this.state.currentPlayerIndex >= this.state.players.length) {
-      console.log(`[BlackjackGame] All players done → phase = dealer`);
       this.state.phase = "dealer";
     }
   }
 
   playDealer(): void {
+    const deck = (this.state as any).deck as Card[];
     while (calculateHandValue(this.state.dealer.hand) < 17) {
-      const { card, remainingDeck } = dealCard(this.state.deck);
+      if (deck.length === 0) break;
+      const { card, remainingDeck } = dealCard(deck);
       this.state.dealer.hand.push(card);
-      this.state.deck = remainingDeck;
+      deck.splice(0, deck.length, ...remainingDeck);
     }
-
     this.state.phase = "resolution";
   }
 
   resolveRound(): void {
-    console.log(`[BlackjackGame] resolveRound START`);
-
     for (const player of this.state.players) {
-      // Processa apenas players que jogaram (não bust/blackjack já definido)
       if (player.status === "playing" || player.status === "blackjack") {
         const hand = player.hands[0];
         const result = resolveHand(hand, this.state.dealer.hand);
-
-        console.log(`[BlackjackGame] ${player.name}: ${result}`);
-
         if (result === "blackjack") {
           player.chips += Math.floor(player.bet * 2.5);
-          player.status = "won"; // Status específico para WIN
+          player.status = "won";
         } else if (result === "win") {
           player.chips += player.bet * 2;
-          player.status = "won"; // Status específico para WIN
+          player.status = "won";
         } else if (result === "push") {
           player.chips += player.bet;
-          player.status = "push"; // Status específico para EMPATE
+          player.status = "push";
         } else {
-          player.status = "lost"; // Perdeu
+          player.status = "lost";
         }
       }
-      // BUST já tem status = "bust" (definido em playerAction)
-      // BLACKJACK já tem status = "blackjack" (definido em dealInitialCards)
-      // NÃO reseta aqui! Precisa mostrar resultado por 6s
     }
-
-    // Muda para resolution para exibir badges
+    const winner = this.state.players.find(
+      (p) => p.chips >= 5000 && (p.status === "won" || p.status === "push" || p.status === "blackjack"),
+    );
+    if (winner) this.state.winnerDeclared = true;
     this.state.phase = "resolution";
-    console.log(`[BlackjackGame] resolveRound END - phase = resolution`);
   }
 
-  // Nova função para resetar após mostrar resultado
   resetForNewRound(): void {
-    console.log(`[BlackjackGame] resetForNewRound`);
-
     for (const player of this.state.players) {
       player.hands = [];
       player.bet = 0;
-      (player as any).betConfirmed = false; // Reset confirmação de aposta
-      // NÃO reseta chips - eles acumulam entre rodadas!
-      // NÃO reseta status - será definido em confirmBetting
+      player.betConfirmed = false;
+      if (player.status !== "folded") player.status = "betting";
     }
-
-    // Reset dealer
     this.state.dealer.hand = [];
-
-    // Volta para betting
     this.state.phase = "betting";
   }
 }

@@ -17,192 +17,149 @@ const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 const roomManager = new GameRoomManager();
+const rateLimiter = new Map<string, number>();
+const RATE_LIMIT_MS = 300;
+const roomTimers = new Map<string, ReturnType<typeof setTimeout>[]>();
 
-// Cleanup inactive rooms every 5 minutes
-setInterval(
-  () => {
-    roomManager.cleanupInactiveRooms();
-  },
-  5 * 60 * 1000,
-);
+function checkRate(socketId: string): boolean {
+  const now = Date.now();
+  const last = rateLimiter.get(socketId) || 0;
+  if (now - last < RATE_LIMIT_MS) return false;
+  rateLimiter.set(socketId, now);
+  return true;
+}
+
+function addRoomTimer(roomId: string, timer: ReturnType<typeof setTimeout>): void {
+  const timers = roomTimers.get(roomId) || [];
+  timers.push(timer);
+  roomTimers.set(roomId, timers);
+}
+
+function clearRoomTimers(roomId: string): void {
+  const timers = roomTimers.get(roomId);
+  if (timers) {
+    for (const t of timers) clearTimeout(t);
+    roomTimers.delete(roomId);
+  }
+}
+
+setInterval(() => roomManager.cleanupInactiveRooms(), 5 * 60 * 1000);
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
 
-  const io = new Server<
-    ClientToServerEvents,
-    ServerToClientEvents,
-    InterServerEvents,
-    SocketData
-  >(httpServer, {
-    cors: {
-      origin: dev
-        ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_WS_URL || "https://vigintiunus.onrender.com",
-      methods: ["GET", "POST"],
-      credentials: true,
+  const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(
+    httpServer,
+    {
+      cors: {
+        origin: dev ? "http://localhost:3000" : process.env.NEXT_PUBLIC_WS_URL || "https://vigintiunus.onrender.com",
+        methods: ["GET", "POST"],
+        credentials: true,
+      },
+      maxHttpBufferSize: 1e6,
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      connectTimeout: 45000,
     },
-    maxHttpBufferSize: 1e6, // 1MB max message size
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    connectTimeout: 45000,
-  });
+  );
 
   io.on("connection", (socket) => {
-    console.log(`[Socket.IO] Client connected: ${socket.id}`);
+    if (!checkRate(socket.id)) return;
 
     socket.on("room:create", (playerName, callback) => {
       try {
-        const roomId = roomManager.createRoom(playerName);
+        const sanitized = playerName?.trim().replace(/[<>]/g, "").slice(0, 20);
+        if (!sanitized) { socket.emit("game:error", "Invalid name"); return; }
+        const roomId = roomManager.createRoom(sanitized);
         const room = roomManager.getRoom(roomId)!;
         const hostId = room.host;
-
         roomManager.updatePlayerSocket(roomId, hostId, socket.id);
         socket.data.roomId = roomId;
         socket.data.playerId = hostId;
-
         socket.join(roomId);
         callback(roomId, hostId);
-
-        const gameState = room.game.getState();
-        io.to(roomId).emit("game:state", gameState);
-
-        console.log(`[Room] Created: ${roomId} by ${playerName} (${hostId})`);
+        io.to(roomId).emit("game:state", room.game.getState());
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to create room";
-        socket.emit("game:error", errorMessage);
-        console.error(`[Error] Create room:`, error);
+        socket.emit("game:error", "Failed to create room");
       }
     });
 
     socket.on("room:join", (roomId, playerName, callback) => {
       try {
-        const playerId = roomManager.joinRoom(roomId, playerName);
-        if (!playerId) {
-          callback(false);
-          return;
-        }
-
+        const sanitized = playerName?.trim().replace(/[<>]/g, "").slice(0, 20);
+        if (!sanitized || !roomId) { callback(false); return; }
+        const playerId = roomManager.joinRoom(roomId, sanitized);
+        if (!playerId) { callback(false); return; }
         const room = roomManager.getRoom(roomId)!;
         roomManager.updatePlayerSocket(roomId, playerId, socket.id);
         socket.data.roomId = roomId;
         socket.data.playerId = playerId;
-
         socket.join(roomId);
         callback(true, playerId);
-
-        const gameState = room.game.getState();
-        io.to(roomId).emit("game:state", gameState);
+        io.to(roomId).emit("game:state", room.game.getState());
         io.to(roomId).emit("room:joined", roomId, playerId);
-
-        console.log(`[Room] ${playerName} (${playerId}) joined ${roomId}`);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to join room";
-        socket.emit("game:error", errorMessage);
-        console.error(`[Error] Join room:`, error);
+      } catch {
+        socket.emit("game:error", "Failed to join room");
       }
     });
 
     socket.on("room:leave", () => {
       const { roomId, playerId } = socket.data;
       if (!roomId || !playerId) return;
-
       roomManager.leaveRoom(roomId, playerId);
       socket.leave(roomId);
       io.to(roomId).emit("room:left", playerId);
-
-      console.log(`[Room] ${playerId} left ${roomId}`);
     });
 
     socket.on("game:start-round", () => {
       const { roomId, playerId } = socket.data;
       if (!roomId || !playerId) return;
-
       try {
-        const room = roomManager.getRoom(roomId)!;
+        const room = roomManager.getRoom(roomId);
+        if (!room || room.host !== playerId) {
+          socket.emit("game:error", "Only host can start");
+          return;
+        }
         room.game.startRound();
-
-        const gameState = room.game.getState();
-        io.to(roomId).emit("game:state", gameState);
-
-        console.log(`[Game] Round started in ${roomId}`);
+        io.to(roomId).emit("game:state", room.game.getState());
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to start round";
-        socket.emit("game:error", errorMessage);
-        console.error(`[Error] Start round:`, error);
+        socket.emit("game:error", "Failed to start round");
       }
     });
 
     socket.on("game:place-bet", (amount) => {
       const { roomId, playerId } = socket.data;
       if (!roomId || !playerId) return;
-
-      // Validate bet amount
-      if (
-        typeof amount !== "number" ||
-        !Number.isFinite(amount) ||
-        amount < 10 ||
-        amount > 10000
-      ) {
+      if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 10 || amount > 10000) {
         socket.emit("game:error", "Invalid bet amount");
         return;
       }
-
       try {
         const room = roomManager.getRoom(roomId)!;
         room.game.placeBet(playerId, amount);
-
-        const gameState = room.game.getState();
-        io.to(roomId).emit("game:state", gameState);
+        io.to(roomId).emit("game:state", room.game.getState());
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to place bet";
-        socket.emit("game:error", errorMessage);
-        console.error(`[Error] Place bet:`, error);
+        socket.emit("game:error", error instanceof Error ? error.message : "Failed to place bet");
       }
     });
 
     socket.on("game:confirm-bet", () => {
       const { roomId, playerId } = socket.data;
       if (!playerId || !roomId) return;
-
       try {
         const room = roomManager.getRoom(roomId)!;
-
-        // Confirma aposta diretamente no game engine
         const allConfirmed = room.game.confirmPlayerBet(playerId);
-
-        const gameState = room.game.getState();
-        const player = gameState.players.find((p: any) => p.id === playerId);
-
-        console.log(
-          `[Confirm Bet] ${player?.name} confirmed bet: $${player?.bet}`,
-        );
-
-        io.to(roomId).emit("game:state", gameState);
-
-        console.log(
-          `[Confirm Bet] All confirmed: ${allConfirmed}, Players:`,
-          gameState.players.map((p: any) => ({
-            name: p.name,
-            bet: p.bet,
-            confirmed: p.betConfirmed,
-          })),
-        );
-
-        if (allConfirmed && gameState.phase === "betting") {
-          console.log(`[Confirm Bet] Starting game!`);
-          setTimeout(() => {
-            room.game.confirmBetting();
-            room.game.dealInitialCards();
-            io.to(roomId).emit("game:state", room.game.getState());
-          }, 1000);
+        io.to(roomId).emit("game:state", room.game.getState());
+        if (allConfirmed) {
+          const t = setTimeout(() => {
+            const r = roomManager.getRoom(roomId);
+            if (!r) return;
+            r.game.startDealing();
+            io.to(roomId).emit("game:state", r.game.getState());
+          }, 800);
+          addRoomTimer(roomId, t);
         }
       } catch (error) {
-        console.error(`[Error] Confirm bet:`, error);
         socket.emit("game:error", "Failed to confirm bet");
       }
     });
@@ -210,39 +167,49 @@ app.prepare().then(() => {
     socket.on("game:action", (action) => {
       const { roomId, playerId } = socket.data;
       if (!roomId || !playerId) return;
-
       try {
         const room = roomManager.getRoom(roomId)!;
         room.game.playerAction(playerId, action);
-
         const gameState = room.game.getState();
         io.to(roomId).emit("game:state", gameState);
-
-        // Auto-trigger dealer when all players done
         if (gameState.phase === "dealer") {
-          setTimeout(() => {
-            room.game.playDealer();
-            io.to(roomId).emit("game:state", room.game.getState());
-
-            // Resolve e mostra resultado
-            setTimeout(() => {
-              room.game.resolveRound();
-              io.to(roomId).emit("game:state", room.game.getState());
-
-              // Espera 6s mostrando resultado, depois reseta
-              setTimeout(() => {
-                room.game.resetForNewRound();
-                io.to(roomId).emit("game:state", room.game.getState());
+          const t1 = setTimeout(() => {
+            const r = roomManager.getRoom(roomId);
+            if (!r) return;
+            r.game.playDealer();
+            io.to(roomId).emit("game:state", r.game.getState());
+            const t2 = setTimeout(() => {
+              const r2 = roomManager.getRoom(roomId);
+              if (!r2) return;
+              r2.game.resolveRound();
+              io.to(roomId).emit("game:state", r2.game.getState());
+              const t3 = setTimeout(() => {
+                const r3 = roomManager.getRoom(roomId);
+                if (!r3) return;
+                r3.game.resetForNewRound();
+                io.to(roomId).emit("game:state", r3.game.getState());
               }, 6000);
+              addRoomTimer(roomId, t3);
             }, 2000);
+            addRoomTimer(roomId, t2);
           }, 1000);
+          addRoomTimer(roomId, t1);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to execute action";
-        socket.emit("game:error", errorMessage);
-        console.error(`[Error] Player action:`, error);
+        socket.emit("game:error", error instanceof Error ? error.message : "Failed to execute action");
       }
+    });
+
+    socket.on("player:reconnect", (roomId: string, playerId: string) => {
+      if (!roomId || !playerId) return;
+      const room = roomManager.getRoom(roomId);
+      if (!room) { socket.emit("game:error", "Room not found"); return; }
+      roomManager.updatePlayerSocket(roomId, playerId, socket.id);
+      socket.data.roomId = roomId;
+      socket.data.playerId = playerId;
+      socket.join(roomId);
+      io.to(roomId).emit("room:player-reconnected", playerId);
+      socket.emit("game:state", room.game.getState());
     });
 
     socket.on("disconnect", () => {
@@ -250,26 +217,35 @@ app.prepare().then(() => {
       if (roomId && playerId) {
         roomManager.disconnectPlayer(roomId, playerId);
         io.to(roomId).emit("room:player-disconnected", playerId);
-        console.log(`[Socket.IO] ${playerId} disconnected from ${roomId}`);
       }
+      clearRoomTimers(socket.id);
     });
   });
 
-  // Health check endpoint
   httpServer.on("request", (req, res) => {
     if (req.url === "/api/health" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({
-          status: "ok",
-          uptime: process.uptime(),
-          timestamp: Date.now(),
-        }),
-      );
+      res.end(JSON.stringify({ status: "ok", uptime: process.uptime(), timestamp: Date.now() }));
     }
   });
 
   httpServer.listen(port, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
   });
+
+  httpServer.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${port} is already in use`);
+      process.exit(1);
+    }
+    throw err;
+  });
+
+  function gracefulShutdown(signal: string) {
+    console.log(`\n> Received ${signal}, shutting down...`);
+    io.close(() => httpServer.close(() => process.exit(0)));
+    setTimeout(() => process.exit(1), 10000);
+  }
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 });

@@ -49,7 +49,8 @@ export function setupSocketListeners(): void {
 
   socket.on("game:error", (error) => {
     console.error("[Socket] Error:", error);
-    alert(error);
+    useGameStore.getState().setError(error);
+    setTimeout(() => useGameStore.getState().setError(null), 5000);
   });
 
   socket.on("disconnect", () => {

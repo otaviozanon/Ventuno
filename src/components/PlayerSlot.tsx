@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import type { Player } from "@/game-engine/types";
 import { Card } from "./Card";
 import { calculateHandValue } from "@/game-engine/rules";
-import { Crown, User } from "lucide-react";
+import { Crown, User, Star } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
 interface PlayerSlotProps {
@@ -104,7 +104,7 @@ export function PlayerSlot({
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-raised/50">
               {isMe ? (
-                <Crown className="h-3.5 w-3.5 text-brand" />
+                <Star className="h-3.5 w-3.5 text-brand" />
               ) : (
                 <User className="h-3.5 w-3.5 text-text-muted" />
               )}
@@ -291,7 +291,7 @@ export function PlayerSlot({
             transition={{ type: "spring", stiffness: 300 }}
             className="rounded-full bg-brand px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-brand/40"
           >
-            SUA VEZ
+            {t.game.yourTurn}
           </motion.div>
         )}
     </div>

@@ -70,7 +70,9 @@ export default function GamePage() {
   }
 
   // Check for winner
-  const winner = gameState.players.find((p) => p.chips >= 5000);
+  const winner = gameState.winnerDeclared
+    ? gameState.players.find((p) => p.chips >= 5000)
+    : null;
 
   return (
     <div className="min-h-screen bg-neutral-950 p-4">

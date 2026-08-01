@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChipStack } from "./ChipStack";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
@@ -24,6 +24,10 @@ export function BettingPanel({
   const { t } = useLanguage();
   const [customAmount, setCustomAmount] = useState("");
   const [pendingBet, setPendingBet] = useState(currentBet);
+
+  useEffect(() => {
+    setPendingBet(currentBet);
+  }, [currentBet]);
 
   const remainingChips = currentChips - pendingBet;
 
@@ -117,6 +121,7 @@ export function BettingPanel({
           max={remainingChips}
           value={customAmount}
           onChange={(e) => setCustomAmount(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleCustomBet()}
           disabled={disabled}
           placeholder={t.game.customAmount}
           className="flex-1 rounded-xl bg-surface-card/40 px-6 py-4 font-mono text-base text-text-primary placeholder-text-muted/30 transition-all focus:bg-surface-card/60 focus:outline-none disabled:opacity-50"

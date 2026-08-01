@@ -2,19 +2,7 @@ import type { Card, Suit, CardValue } from "./types";
 
 const suits: Suit[] = ["hearts", "diamonds", "clubs", "spades"];
 const values: CardValue[] = [
-  "A",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "10",
-  "J",
-  "Q",
-  "K",
+  "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
 ];
 
 export function createDeck(): Card[] {
@@ -29,14 +17,17 @@ export function createDeck(): Card[] {
 
 export function shuffle(deck: Card[]): Card[] {
   const shuffled = [...deck];
+  const array = new Uint32Array(shuffled.length);
+  crypto.getRandomValues(array);
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = array[i] % (i + 1);
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
 }
 
 export function dealCard(deck: Card[]): { card: Card; remainingDeck: Card[] } {
+  if (deck.length === 0) throw new Error("Deck is empty");
   const remainingDeck = [...deck];
   const card = remainingDeck.pop()!;
   return { card, remainingDeck };
