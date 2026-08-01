@@ -37,3 +37,7 @@ Seja o primeiro a acumular **5.000 chips**. Todos jogam contra o dealer ao mesmo
 2. Espere todos entrarem (2 a 7 jogadores)
 3. Aposte, jogue contra o dealer, acumule fichas
 4. Primeiro a bater **5.000 chips** vence
+
+## 📄 License
+
+GPL-3.0. See [LICENSE](/LICENSE).
