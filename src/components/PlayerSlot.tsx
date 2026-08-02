@@ -83,7 +83,7 @@ export function PlayerSlot({
                     ? [0, 0.5, 1]
                     : undefined,
         }}
-        className={`relative w-full max-w-[320px] overflow-hidden rounded-2xl px-3 py-4 transition-all ${
+        className={`relative w-full max-w-full sm:max-w-[320px] overflow-hidden rounded-2xl px-2 sm:px-3 py-3 sm:py-4 transition-all ${
           isBust
             ? "bg-red-500/10 shadow-xl shadow-red-500/20"
             : isLost

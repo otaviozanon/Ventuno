@@ -88,7 +88,7 @@ export function BettingPanel({
       </div>
 
       {/* Quick bet chips - ultra minimalista */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
         {betAmounts.map((amount) => {
           const canAfford = amount <= remainingChips;
           return (

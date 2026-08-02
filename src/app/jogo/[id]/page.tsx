@@ -75,7 +75,7 @@ export default function GamePage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-neutral-950 p-4">
+    <div className="min-h-dvh bg-neutral-950 p-3 sm:p-4">
       {/* Winner Modal */}
       {winner && (
         <WinnerModal
