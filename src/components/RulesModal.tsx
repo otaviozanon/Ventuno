@@ -26,7 +26,7 @@ export function RulesModal() {
       <div className="w-full max-w-lg max-h-[80vh] space-y-4 overflow-y-auto rounded-2xl border border-border bg-surface-card p-6 animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-text-primary">
+          <h2 className="font-heading text-xl font-black text-text-primary">
             {t.rules.title}
           </h2>
           <button onClick={() => setOpen(false)} className="p-2">

@@ -99,5 +99,9 @@ export function useSocketActions(socket: ClientSocket | null) {
     playerAction: (action: "hit" | "stand" | "double" | "split") => {
       socket?.emit("game:action", action);
     },
+
+    rebuy: () => {
+      socket?.emit("game:rebuy");
+    },
   };
 }

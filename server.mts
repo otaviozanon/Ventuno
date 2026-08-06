@@ -200,6 +200,18 @@ app.prepare().then(() => {
       }
     });
 
+    socket.on("game:rebuy", () => {
+      const { roomId, playerId } = socket.data;
+      if (!roomId || !playerId) return;
+      try {
+        const room = roomManager.getRoom(roomId)!;
+        room.game.rebuy(playerId);
+        io.to(roomId).emit("game:state", room.game.getState());
+      } catch (error) {
+        socket.emit("game:error", error instanceof Error ? error.message : "Failed to rebuy");
+      }
+    });
+
     socket.on("player:reconnect", (roomId: string, playerId: string) => {
       if (!roomId || !playerId) return;
       const room = roomManager.getRoom(roomId);

@@ -117,13 +117,13 @@ export default function HomePage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-5xl font-black text-text-primary tracking-tight">
+          <h1 className="font-heading text-5xl font-black text-text-primary tracking-tight">
             {t.home.title}
           </h1>
-          <p className="text-text-secondary text-lg mt-1 font-medium">
+          <p className="font-heading text-text-secondary text-lg mt-1 font-medium">
             {t.home.subtitle}
           </p>
-          <p className="text-text-muted text-sm">{t.home.playerCount}</p>
+          <p className="font-heading text-text-muted text-sm">{t.home.playerCount}</p>
         </div>
 
         <div className="space-y-4">
@@ -137,7 +137,7 @@ export default function HomePage() {
 
           <button
             onClick={handleCreate}
-            className="w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand active:scale-[0.98] text-white font-black text-lg transition-all duration-200 touch-target shadow-2xl shadow-brand/30"
+            className="font-heading w-full flex items-center justify-center gap-3 px-6 py-5 rounded-2xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand active:scale-[0.98] text-white font-black text-lg transition-all duration-200 touch-target shadow-2xl shadow-brand/30"
           >
             <Users size={22} />
             {t.home.createRoom}

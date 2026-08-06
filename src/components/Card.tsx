@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 interface CardProps {
   card: CardType;
   className?: string;
+  disableFlip?: boolean;
 }
 
 const suitSymbols = {
@@ -22,62 +23,71 @@ const suitColors = {
   spades: "text-gray-900",
 };
 
-export function Card({ card, className = "" }: CardProps) {
-  // Proteção contra card null/undefined
-  if (!card) {
-    return null;
-  }
+export function Card({ card, className = "", disableFlip = false }: CardProps) {
+  if (!card) return null;
 
-  const [wasHidden, setWasHidden] = useState(card.isHidden);
-  const [isFlipping, setIsFlipping] = useState(false);
+  const [flipped, setFlipped] = useState(card.isHidden ?? false);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    // Detecta quando carta hidden vira para visível
-    if (wasHidden && !card.isHidden) {
-      setIsFlipping(true);
-      setTimeout(() => setIsFlipping(false), 800);
+    if (disableFlip) {
+      setFlipped(false);
+      setShouldAnimate(false);
+      return;
     }
-    setWasHidden(card.isHidden);
-  }, [card.isHidden, wasHidden]);
 
-  if (card.isHidden) {
-    return (
-      <motion.div
-        key="hidden"
-        initial={{ rotateY: 0, scale: 0.9 }}
-        animate={{ rotateY: 0, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className={`relative flex h-32 w-24 items-center justify-center rounded-lg border-2 border-gray-700 bg-gradient-to-br from-blue-900 to-blue-700 shadow-lg ${className}`}
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        <div className="absolute inset-2 rounded border-2 border-blue-400/30" />
-        <div className="text-4xl text-blue-400/50">★</div>
-      </motion.div>
-    );
-  }
+    const targetFlipped = card.isHidden ?? false;
+    if (targetFlipped !== flipped) {
+      setShouldAnimate(true);
+      setFlipped(targetFlipped);
+    }
+  }, [card.isHidden, disableFlip]);
 
   return (
-    <motion.div
-      key="revealed"
-      initial={isFlipping ? { rotateY: 180 } : { rotateY: 0, scale: 0.9 }}
-      animate={{ rotateY: 0, scale: 1 }}
-      transition={
-        isFlipping
-          ? { rotateY: { duration: 0.6, ease: "easeInOut" } }
-          : { duration: 0.3 }
-      }
-      className={`relative flex h-32 w-24 flex-col items-center justify-between rounded-lg border-2 border-gray-300 bg-white p-2 shadow-lg ${className}`}
-      style={{ transformStyle: "preserve-3d" }}
+    <div
+      className={`relative ${className}`}
+      style={{ perspective: 600, width: 96, height: 128 }}
     >
-      <div className={`text-2xl font-bold ${suitColors[card.suit]}`}>
-        {card.value}
-      </div>
-      <div className={`text-4xl ${suitColors[card.suit]}`}>
-        {suitSymbols[card.suit]}
-      </div>
-      <div className={`rotate-180 text-2xl font-bold ${suitColors[card.suit]}`}>
-        {card.value}
-      </div>
-    </motion.div>
+      <motion.div
+        animate={{ rotateY: flipped ? 0 : 180 }}
+        transition={
+          shouldAnimate
+            ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
+            : { duration: 0 }
+        }
+        className="relative h-full w-full"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {/* Frente da carta (revelada) */}
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-between rounded-lg border-2 border-gray-300 bg-white p-2 shadow-lg"
+          style={{
+            backfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+          }}
+        >
+          <div className={`font-display text-2xl ${suitColors[card.suit]}`}>
+            {card.value}
+          </div>
+          <div className={`font-display text-4xl ${suitColors[card.suit]}`}>
+            {suitSymbols[card.suit]}
+          </div>
+          <div
+            className={`font-display rotate-180 text-2xl ${suitColors[card.suit]}`}
+          >
+            {card.value}
+          </div>
+        </div>
+
+        {/* Verso da carta (oculta) */}
+        <div
+          className="absolute inset-0 flex items-center justify-center rounded-lg border-2 border-gray-700 bg-gradient-to-br from-blue-900 to-blue-700 shadow-lg"
+          style={{ backfaceVisibility: "hidden" }}
+        >
+          <div className="absolute inset-2 rounded border-2 border-blue-400/30" />
+          <div className="text-4xl text-blue-400/50">★</div>
+        </div>
+      </motion.div>
+    </div>
   );
 }

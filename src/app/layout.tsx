@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Righteous, Russo_One } from "next/font/google";
 import "./globals.css";
+
+const righteous = Righteous({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-righteous",
+});
+
+const russoOne = Russo_One({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-russo-one",
+});
 
 export const metadata: Metadata = {
   title: "Ventuno - Blackjack",
@@ -9,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="antialiased">
+    <html lang="pt-BR" className={`antialiased ${righteous.variable} ${russoOne.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -26,6 +26,8 @@ const config: Config = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        display: ["var(--font-russo-one)", "sans-serif"],
+        heading: ["var(--font-righteous)", "sans-serif"],
       },
       animation: {
         "fade-in": "fadeIn 200ms ease-out",

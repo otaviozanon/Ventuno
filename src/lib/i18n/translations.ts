@@ -51,6 +51,10 @@ export const translations = {
       waitingPlayers: "⏳ Aguardando jogadores...",
       startRound: "🎲 Iniciar Rodada",
       phase: "Fase: ",
+      rebuy: "Fichas acabaram! Comprar 1000 fichas por $1.000?",
+      rebuyButton: "Comprar Fichas",
+      rebuyMax: "Limite de recompras atingido (3)",
+      spectator: "Espectador — aguardando o fim da partida",
     },
     // Status
     status: {
@@ -150,6 +154,10 @@ export const translations = {
       waitingPlayers: "⏳ Waiting for players...",
       startRound: "🎲 Start Round",
       phase: "Phase: ",
+      rebuy: "Out of chips! Buy 1000 chips for $1,000?",
+      rebuyButton: "Buy Chips",
+      rebuyMax: "Rebuy limit reached (3)",
+      spectator: "Spectator — waiting for game to end",
     },
     // Status
     status: {

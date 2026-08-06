@@ -109,7 +109,7 @@ export function PlayerSlot({
                 <User className="h-3.5 w-3.5 text-text-muted" />
               )}
             </div>
-            <span className="text-sm font-semibold text-text-primary">
+            <span className="font-heading text-sm font-semibold text-text-primary">
               {player.name}
             </span>
           </div>
@@ -122,7 +122,7 @@ export function PlayerSlot({
         <div className="mb-3 flex h-10 items-center justify-center">
           {player.bet > 0 ? (
             <div className="flex items-center gap-2 rounded-xl bg-brand/5 px-3 py-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-text-muted/60">
+              <span className="font-heading text-xs font-semibold uppercase tracking-wider text-text-muted/60">
                 {t.game.bet}
               </span>
               <span className="font-mono text-lg font-bold text-brand">
@@ -139,7 +139,7 @@ export function PlayerSlot({
           {mainHand.length > 0 && (
             <div className="flex w-full flex-col items-center space-y-3">
               <div
-                className="relative mx-auto h-40"
+                className="relative mx-auto h-40 pt-3"
                 style={{
                   width: `${Math.min(mainHand.length * 40 + 80, 280)}px`,
                 }}
@@ -147,11 +147,15 @@ export function PlayerSlot({
                 {mainHand.map((card, idx) => {
                   const totalCards = mainHand.length;
                   const centerOffset = (totalCards - 1) / 2;
-                  const rotation = (idx - centerOffset) * 8;
-                  const offsetY = Math.abs(idx - centerOffset) * 4;
+                  const rotationBase = totalCards <= 3 ? 32 : totalCards === 4 ? 22 : 15;
+                  const rotation = (idx - centerOffset) * rotationBase;
+                  const offsetY = idx * (totalCards <= 3 ? 4 : totalCards === 4 ? 3 : 2);
                   // Ajusta spacing dinamicamente baseado no número de cartas
                   const cardSpacing = Math.min(40, 280 / totalCards - 20);
-                  const leftPos = idx * cardSpacing;
+                  const totalSpan = (totalCards - 1) * cardSpacing + 96;
+                  const containerW = Math.min(mainHand.length * 40 + 80, 280);
+                  const startX = (containerW - totalSpan) / 2;
+                  const leftPos = startX + idx * cardSpacing;
 
                   return (
                     <motion.div
@@ -179,7 +183,7 @@ export function PlayerSlot({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className="rounded-full bg-surface-raised/80 px-4 py-1.5 font-mono text-sm font-bold text-text-primary"
+                className="rounded-full bg-surface-raised/80 px-4 py-1.5 font-heading text-sm font-bold text-text-primary"
               >
                 {handValue}
               </motion.div>
@@ -202,7 +206,7 @@ export function PlayerSlot({
             ease: "easeOut",
             times: [0, 0.2, 0.4, 0.6, 0.8, 0.9, 1],
           }}
-          className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-red-600/40"
+          className="font-heading rounded-full bg-red-600 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-red-600/40"
         >
           {t.status.bust}
         </motion.div>
@@ -220,7 +224,7 @@ export function PlayerSlot({
             ease: "easeOut",
             times: [0, 0.15, 0.3, 0.45, 0.6, 0.8, 1],
           }}
-          className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-black shadow-lg shadow-yellow-400/40"
+          className="font-heading rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-black shadow-lg shadow-yellow-400/40"
         >
           {t.status.blackjack}
         </motion.div>
@@ -238,7 +242,7 @@ export function PlayerSlot({
             ease: "easeOut",
             times: [0, 0.15, 0.3, 0.45, 0.6, 0.8, 1],
           }}
-          className="rounded-full bg-green-600 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-green-600/40"
+          className="font-heading rounded-full bg-green-600 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-green-600/40"
         >
           {t.status.won}
         </motion.div>
@@ -256,7 +260,7 @@ export function PlayerSlot({
             ease: "easeOut",
             times: [0, 0.2, 0.4, 0.6, 0.8, 0.9, 1],
           }}
-          className="rounded-full bg-yellow-600 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-yellow-600/40"
+          className="font-heading rounded-full bg-yellow-600 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-yellow-600/40"
         >
           {t.status.push}
         </motion.div>
@@ -274,7 +278,7 @@ export function PlayerSlot({
             ease: "easeOut",
             times: [0, 0.5, 1],
           }}
-          className="rounded-full bg-red-600/80 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white/90 shadow-lg shadow-red-600/30"
+          className="font-heading rounded-full bg-red-600/80 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white/90 shadow-lg shadow-red-600/30"
         >
           {t.status.lost}
         </motion.div>
@@ -289,7 +293,7 @@ export function PlayerSlot({
             initial={{ scale: 0, y: -10 }}
             animate={{ scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 300 }}
-            className="rounded-full bg-brand px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-brand/40"
+            className="font-heading rounded-full bg-brand px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-brand/40"
           >
             {t.game.yourTurn}
           </motion.div>

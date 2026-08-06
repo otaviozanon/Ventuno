@@ -13,7 +13,6 @@ interface DealerAreaProps {
 
 export function DealerArea({ hand, phase }: DealerAreaProps) {
   const { t } = useLanguage();
-  // Proteção contra hand null/undefined
   const safeHand = hand || [];
   const handValue = safeHand.length > 0 ? calculateHandValue(safeHand) : 0;
   const showValue = safeHand.length > 0 && phase !== "betting";
@@ -22,7 +21,6 @@ export function DealerArea({ hand, phase }: DealerAreaProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Dealer icon + label */}
       <div className="flex flex-col items-center gap-2">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -32,54 +30,47 @@ export function DealerArea({ hand, phase }: DealerAreaProps) {
         >
           <UserCircle className="h-10 w-10 text-brand" />
         </motion.div>
-        <div className="text-sm font-bold uppercase tracking-wider text-text-muted">
+        <div className="font-heading text-sm font-bold uppercase tracking-wider text-text-muted">
           {t.game.dealer}
         </div>
       </div>
 
-      {/* Cards em V formation */}
       {shouldShowCards && (
         <div className="flex w-full flex-col items-center gap-3">
-          <div
-            className="relative mx-auto h-44"
-            style={{ width: `${safeHand.length * 65 + 20}px` }}
-          >
-            {safeHand.map((card, idx) => {
-              // Proteção contra card null
-              if (!card) return null;
+          <div className="flex items-center justify-center">
+            <div className="relative flex items-center" style={{ height: 136 }}>
+              {safeHand.map((card, idx) => {
+                if (!card) return null;
 
-              const totalCards = safeHand.length;
-              const centerOffset = (totalCards - 1) / 2;
-              const rotation = (idx - centerOffset) * 8;
-              const offsetY = Math.abs(idx - centerOffset) * 6;
+                const isHiddenCard = idx === 1 && phase === "playing";
 
-              return (
-                <motion.div
-                  key={idx}
-                  className="absolute"
-                  style={{
-                    zIndex: idx,
-                    left: `${idx * 65}px`,
-                  }}
-                  initial={{ y: -100, opacity: 0, rotate: rotation }}
-                  animate={{ y: offsetY, opacity: 1, rotate: rotation }}
-                  transition={{
-                    delay: idx * 0.15,
-                    duration: 0.5,
-                    type: "spring",
-                    stiffness: 120,
-                  }}
-                >
-                  <Card
-                    card={
-                      idx === 1 && phase === "playing"
-                        ? { ...card, isHidden: true }
-                        : card
-                    }
-                  />
-                </motion.div>
-              );
-            })}
+                return (
+                  <motion.div
+                    key={idx}
+                    style={{
+                      marginLeft: idx === 0 ? 0 : -32,
+                      zIndex: idx,
+                    }}
+                    initial={{ x: 60, y: -10, opacity: 0, scale: 0.85 }}
+                    animate={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                    transition={{
+                      delay: idx * 0.12,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 20,
+                    }}
+                  >
+                    <Card
+                      card={
+                        isHiddenCard
+                          ? { ...card, isHidden: true }
+                          : card
+                      }
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Badge valor */}
@@ -91,7 +82,7 @@ export function DealerArea({ hand, phase }: DealerAreaProps) {
               type: "spring",
               stiffness: isRevealing ? 400 : 300,
             }}
-            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold shadow-lg ${
+            className={`font-heading rounded-full border-2 px-4 py-1.5 text-sm font-bold shadow-lg ${
               isRevealing
                 ? "border-brand bg-brand/10 text-brand animate-pulse"
                 : "border-brand/20 bg-surface-card text-brand"
@@ -106,7 +97,7 @@ export function DealerArea({ hand, phase }: DealerAreaProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-sm text-text-muted"
+          className="font-heading text-sm text-text-muted"
         >
           {t.game.waiting}
         </motion.div>
@@ -116,7 +107,7 @@ export function DealerArea({ hand, phase }: DealerAreaProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-sm text-text-muted"
+          className="font-heading text-sm text-text-muted"
         >
           {t.game.preparing}
         </motion.div>

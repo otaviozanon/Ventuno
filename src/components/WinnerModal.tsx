@@ -105,12 +105,12 @@ export function WinnerModal({
           transition={{ delay: 0.5 }}
           className="text-center space-y-2"
         >
-          <h2 className="text-3xl font-black text-text-primary flex items-center justify-center gap-2">
+          <h2 className="font-heading text-3xl font-black text-text-primary flex items-center justify-center gap-2">
             <Sparkles className="text-brand" size={24} />
             {t.winner.title}
             <Sparkles className="text-brand" size={24} />
           </h2>
-          <p className="text-xl font-bold text-brand">
+          <p className="font-heading text-xl font-bold text-brand">
             {winner.name} {t.winner.won}
           </p>
           <p className="text-2xl font-black text-brand">
@@ -158,7 +158,7 @@ export function WinnerModal({
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
           onClick={onPlayAgain}
-          className="w-full py-4 rounded-xl font-black text-lg bg-brand text-white hover:bg-brand-dark transition-all duration-200 shadow-lg shadow-brand/30"
+          className="font-heading w-full py-4 rounded-xl font-black text-lg bg-brand text-white hover:bg-brand-dark transition-all duration-200 shadow-lg shadow-brand/30"
         >
           {t.winner.playAgain}
         </motion.button>

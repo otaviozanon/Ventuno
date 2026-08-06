@@ -70,14 +70,14 @@ export default function LobbyPage() {
           <div className="w-16 h-16 mx-auto rounded-2xl bg-brand flex items-center justify-center shadow-lg shadow-brand/30">
             <Users size={32} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">
+          <h1 className="font-heading text-2xl font-bold text-text-primary">
             {t.lobby.title}
           </h1>
         </div>
 
         <div className="space-y-3">
           <div className="text-center p-6 rounded-xl bg-surface-raised border border-border">
-            <p className="text-text-muted text-sm mb-2">{t.lobby.roomCode}</p>
+            <p className="font-heading text-text-muted text-sm mb-2">{t.lobby.roomCode}</p>
             <button
               onClick={handleCopyCode}
               className="group flex items-center justify-center gap-3 mx-auto text-4xl font-mono font-bold text-brand hover:text-brand-light tracking-[0.3em] transition-all duration-200 touch-target"
@@ -85,7 +85,7 @@ export default function LobbyPage() {
               {roomId}
               <Copy size={20} />
             </button>
-            <p className="text-text-muted text-xs mt-2">{t.lobby.copyCode}</p>
+            <p className="font-heading text-text-muted text-xs mt-2">{t.lobby.copyCode}</p>
           </div>
 
           <div className="text-center p-4 rounded-xl bg-surface-raised border border-border">
@@ -101,7 +101,7 @@ export default function LobbyPage() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <span className="text-sm text-text-secondary flex items-center gap-2">
+            <span className="font-heading text-sm text-text-secondary flex items-center gap-2">
               <Users size={16} />
               {t.lobby.players}
             </span>

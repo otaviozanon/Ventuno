@@ -65,7 +65,7 @@ export function BettingPanel({
       {/* Header - Chips info */}
       <div className="flex items-end justify-center gap-12">
         <div className="text-center">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-text-muted/60">
+          <div className="font-heading mb-1 text-xs font-semibold uppercase tracking-widest text-text-muted/60">
             {t.game.available}
           </div>
           <div className="font-mono text-4xl font-bold tracking-tight text-white">
@@ -76,7 +76,7 @@ export function BettingPanel({
           <>
             <div className="h-8 w-px bg-border/20" />
             <div className="text-center">
-              <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand/60">
+              <div className="font-heading mb-1 text-xs font-semibold uppercase tracking-widest text-brand/60">
                 {t.game.bet}
               </div>
               <div className="font-mono text-4xl font-bold tracking-tight text-brand">
@@ -129,7 +129,7 @@ export function BettingPanel({
         <button
           onClick={handleCustomBet}
           disabled={disabled || !customAmount}
-          className="rounded-xl bg-brand px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-brand-light hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+          className="font-heading rounded-xl bg-brand px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-brand-light hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
         >
           {t.game.add}
         </button>
@@ -141,7 +141,7 @@ export function BettingPanel({
           <button
             onClick={handleClear}
             disabled={disabled}
-            className="rounded-xl bg-red-500/10 px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-red-400/80 transition-all hover:bg-red-500/20 hover:text-red-400 active:scale-98 disabled:opacity-50"
+            className="font-heading rounded-xl bg-red-500/10 px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-red-400/80 transition-all hover:bg-red-500/20 hover:text-red-400 active:scale-98 disabled:opacity-50"
           >
             {t.game.clear}
           </button>
@@ -149,7 +149,7 @@ export function BettingPanel({
         <button
           onClick={handleConfirm}
           disabled={disabled || pendingBet < 10}
-          className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand-light py-4 text-base font-black uppercase tracking-wider text-white shadow-xl shadow-brand/30 transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
+          className="font-heading flex-1 rounded-xl bg-gradient-to-r from-brand to-brand-light py-4 text-base font-black uppercase tracking-wider text-white shadow-xl shadow-brand/30 transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
         >
           {pendingBet >= 10 ? t.game.confirmBet : t.game.betMin}
         </button>

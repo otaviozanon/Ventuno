@@ -41,6 +41,7 @@ export interface ClientToServerEvents {
   "game:place-bet": (amount: number) => void;
   "game:confirm-bet": () => void;
   "game:action": (action: "hit" | "stand" | "double" | "split") => void;
+  "game:rebuy": () => void;
   "player:reconnect": (roomId: string, playerId: string) => void;
 }
 

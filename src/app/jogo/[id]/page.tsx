@@ -13,6 +13,7 @@ import { PlayerSlot } from "@/components/PlayerSlot";
 import { ActionButtons } from "@/components/ActionButtons";
 import { BettingPanel } from "@/components/BettingPanel";
 import { WinnerModal } from "@/components/WinnerModal";
+import { RebuyPanel } from "@/components/RebuyPanel";
 import { canDouble } from "@/game-engine/rules";
 import { useEffect } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -62,7 +63,7 @@ export default function GamePage() {
   if (!gameState) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
-        <div className="text-xl font-semibold text-slate-400">
+        <div className="font-heading text-xl font-semibold text-slate-400">
           {t.game.loading}
         </div>
       </div>
@@ -116,7 +117,7 @@ export default function GamePage() {
             <button
               onClick={() => actions.startRound()}
               disabled={gameState.players.length < 2}
-              className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-10 py-4 text-lg font-bold text-slate-900 shadow-lg shadow-gold-500/30 transition-all hover:from-gold-400 hover:to-gold-500 hover:shadow-gold-500/40 disabled:opacity-50 disabled:hover:from-gold-500 disabled:hover:to-gold-600"
+              className="font-heading rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-10 py-4 text-lg font-bold text-slate-900 shadow-lg shadow-gold-500/30 transition-all hover:from-gold-400 hover:to-gold-500 hover:shadow-gold-500/40 disabled:opacity-50 disabled:hover:from-gold-500 disabled:hover:to-gold-600"
             >
               {gameState.players.length < 2
                 ? t.game.waitingPlayers
@@ -124,7 +125,14 @@ export default function GamePage() {
             </button>
           )}
 
-          {gameState.phase === "betting" && myPlayer && (
+          {gameState.phase === "betting" && myPlayer && myPlayer.chips <= 0 && (
+            <RebuyPanel
+              rebuysUsed={myPlayer.rebuysUsed}
+              onRebuy={() => actions.rebuy()}
+            />
+          )}
+
+          {gameState.phase === "betting" && myPlayer && myPlayer.chips > 0 && (
             <BettingPanel
               currentChips={myPlayer.chips}
               currentBet={myPlayer.bet}
@@ -143,13 +151,13 @@ export default function GamePage() {
           )}
 
           {gameState.phase === "dealer" && (
-            <div className="text-2xl font-bold text-white">
+            <div className="font-heading text-2xl font-bold text-white">
               {t.game.dealerPlaying}
             </div>
           )}
 
           {gameState.phase === "resolution" && (
-            <div className="text-2xl font-bold text-white">
+            <div className="font-heading text-2xl font-bold text-white">
               {t.game.roundComplete}
             </div>
           )}
@@ -157,7 +165,7 @@ export default function GamePage() {
 
         {/* Phase indicator */}
         <div className="mx-auto max-w-fit rounded-lg border border-slate-700/50 bg-slate-800/50 px-4 py-2 backdrop-blur-sm">
-          <span className="text-sm font-medium text-slate-400">
+          <span className="font-heading text-sm font-medium text-slate-400">
             {t.game.phase}
           </span>
           <span className="text-sm font-bold uppercase text-gold-400">

@@ -240,9 +240,25 @@ export class BlackjackGame {
       player.hands = [];
       player.bet = 0;
       player.betConfirmed = false;
-      if (player.status !== "folded") player.status = "betting";
+      if (player.chips <= 0 && player.rebuysUsed >= 3) {
+        player.status = "folded";
+      } else if (player.status !== "folded") {
+        player.status = "betting";
+      }
     }
     this.state.dealer.hand = [];
     this.state.phase = "betting";
+  }
+
+  rebuy(playerId: string): void {
+    const player = this.state.players.find((p) => p.id === playerId);
+    if (!player) throw new Error("Player not found");
+    if (player.chips > 0) throw new Error("Player still has chips");
+    if (player.rebuysUsed >= 3) throw new Error("Maximum rebuys reached (3)");
+    player.chips = 1000;
+    player.rebuysUsed++;
+    player.status = "betting";
+    player.bet = 0;
+    player.betConfirmed = false;
   }
 }
